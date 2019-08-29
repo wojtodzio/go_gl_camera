@@ -1,45 +1,56 @@
 package gfx
 
 import (
-	"fmt"
-	"strings"
 	"io/ioutil"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 
 )
 
-func CompileShaderFromFile(filename string, shaderType uint32) (uint32, error) {
+type Shader struct {
+	glShader uint32
+}
+
+func (shader *Shader) glObject() uint32 {
+	return shader.glShader
+}
+
+func (shader *Shader) Delete() {
+	gl.DeleteShader(shader.glObject())
+}
+
+func NewShader(source string, shaderType uint32) (*Shader, error) {
+	glShader := gl.CreateShader(shaderType)
+
+	csources, free := gl.Strs(source)
+	gl.ShaderSource(glShader, 1, csources, nil)
+	free()
+	gl.CompileShader(glShader)
+
+	wrappedShader := &Shader{glShader: glShader}
+
+	err := getGlError(
+		wrappedShader,
+		gl.COMPILE_STATUS,
+		gl.GetShaderiv,
+		gl.GetShaderInfoLog,
+		"Failed to compile",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return wrappedShader, nil
+}
+
+func NewShaderFromFile(filename string, shaderType uint32) (*Shader, error) {
 	fileContent, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	shaderSource := string(fileContent) + "\x00"
 
-	return CompileShader(shaderSource, shaderType)
-}
-
-func CompileShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
-
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
-	}
-
-	return shader, nil
+	return NewShader(shaderSource, shaderType)
 }

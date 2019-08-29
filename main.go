@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"log"
 
-	_ "github.com/wojtodzio/go_gl_camera/gfx"
+	"github.com/wojtodzio/go_gl_camera/gfx"
 	"github.com/wojtodzio/go_gl_camera/win"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -40,11 +40,13 @@ func main() {
 		panic(err)
 	}
 
-	for !window.ShouldClose() {
+	if err := programLoop(window); err != nil {
+		log.Fatalln("Program crashed")
+		panic(err)
 	}
 }
 
-func initGlfw() (error) {
+func initGlfw() error {
 	if err := glfw.Init(); err != nil {
 		return err
 	}
@@ -67,5 +69,27 @@ func initOpenGL() error {
 	// https://www.khronos.org/opengl/wiki/Depth_Test
 	gl.Enable(gl.DEPTH_TEST)
 
+	return nil
+}
+
+func programLoop(window *win.Window) error {
+	vertexShader, err := gfx.NewShaderFromFile("shaders/basic.vert", gl.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+	fragmentShader, err := gfx.NewShaderFromFile("shaders/basic.frag", gl.FRAGMENT_SHADER)
+	if err != nil {
+		return err
+	}
+
+	program, err := gfx.NewProgram(vertexShader, fragmentShader)
+	if err != nil {
+		return err
+	}
+
+	defer program.Delete()
+
+	for !window.ShouldClose() {
+	}
 	return nil
 }
