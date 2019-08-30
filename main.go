@@ -9,8 +9,6 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-
-	"time"
 )
 
 
@@ -18,7 +16,6 @@ const (
 	width  = 1000
 	height = 1000
 )
-
 func init() {
 	runtime.LockOSThread()
 }
@@ -99,9 +96,6 @@ func programLoop(window *win.Window) error {
 		gl.ClearColor(0.2, 0.5, 0.5, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)  // depth buffer needed for DEPTH_TEST
 		program.Use()
-
-		// TODO: Remove, it's a quick hack to not kill my machine's performance
-		time.Sleep(10 * time.Millisecond)
 
 		gl.BindVertexArray(0)
 	}
