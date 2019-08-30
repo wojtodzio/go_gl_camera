@@ -6,9 +6,13 @@ import (
 
 	"github.com/wojtodzio/go_gl_camera/gfx"
 	"github.com/wojtodzio/go_gl_camera/win"
+	"github.com/wojtodzio/go_gl_camera/cam"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
+
+	"time"
 )
 
 
@@ -18,6 +22,64 @@ const (
 )
 func init() {
 	runtime.LockOSThread()
+}
+
+var cubeVertices = []float32{
+	// position        // texture position
+	-0.5, -0.5, -0.5,  0.0, 0.0,
+	 0.5, -0.5, -0.5,  1.0, 0.0,
+	 0.5,  0.5, -0.5,  1.0, 1.0,
+	 0.5,  0.5, -0.5,  1.0, 1.0,
+	-0.5,  0.5, -0.5,  0.0, 1.0,
+	-0.5, -0.5, -0.5,  0.0, 0.0,
+
+	-0.5, -0.5,  0.5,  0.0, 0.0,
+	 0.5, -0.5,  0.5,  1.0, 0.0,
+	 0.5,  0.5,  0.5,  1.0, 1.0,
+	 0.5,  0.5,  0.5,  1.0, 1.0,
+	-0.5,  0.5,  0.5,  0.0, 1.0,
+	-0.5, -0.5,  0.5,  0.0, 0.0,
+
+	-0.5,  0.5,  0.5,  1.0, 0.0,
+	-0.5,  0.5, -0.5,  1.0, 1.0,
+	-0.5, -0.5, -0.5,  0.0, 1.0,
+	-0.5, -0.5, -0.5,  0.0, 1.0,
+	-0.5, -0.5,  0.5,  0.0, 0.0,
+	-0.5,  0.5,  0.5,  1.0, 0.0,
+
+	 0.5,  0.5,  0.5,  1.0, 0.0,
+	 0.5,  0.5, -0.5,  1.0, 1.0,
+	 0.5, -0.5, -0.5,  0.0, 1.0,
+	 0.5, -0.5, -0.5,  0.0, 1.0,
+	 0.5, -0.5,  0.5,  0.0, 0.0,
+	 0.5,  0.5,  0.5,  1.0, 0.0,
+
+	-0.5, -0.5, -0.5,  0.0, 1.0,
+	 0.5, -0.5, -0.5,  1.0, 1.0,
+	 0.5, -0.5,  0.5,  1.0, 0.0,
+	 0.5, -0.5,  0.5,  1.0, 0.0,
+	-0.5, -0.5,  0.5,  0.0, 0.0,
+	-0.5, -0.5, -0.5,  0.0, 1.0,
+
+	-0.5,  0.5, -0.5,  0.0, 1.0,
+	 0.5,  0.5, -0.5,  1.0, 1.0,
+	 0.5,  0.5,  0.5,  1.0, 0.0,
+	 0.5,  0.5,  0.5,  1.0, 0.0,
+	-0.5,  0.5,  0.5,  0.0, 0.0,
+	-0.5,  0.5, -0.5,  0.0, 1.0,
+}
+
+var cubePositions = [][]float32 {
+	{ 0.0,  0.0,  -3.0},
+	{ 2.0,  5.0, -15.0},
+	{-1.5, -2.2, -2.5 },
+	{-3.8, -2.0, -12.3},
+	{ 2.4, -0.4, -3.5 },
+	{-1.7,  3.0, -7.5 },
+	{ 1.3, -2.0, -2.5 },
+	{ 1.5,  2.0, -2.5 },
+	{ 1.5,  0.2, -1.5 },
+	{-1.3,  1.0, -1.5 },
 }
 
 func main() {
@@ -88,16 +150,39 @@ func programLoop(window *win.Window) error {
 
 	defer program.Delete()
 
+	vao := gfx.CreateVAO(cubeVertices)
+
+	camera := cam.NewFPSCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 1, 0}, -90, 0)
+
 	log.Println("Entering program loop")
 	for !window.ShouldClose() {
 		window.StartFrame()
+
+		camera.Update(window.SincePreviousFrame())
 
 		// Clear the colorbuffer
 		gl.ClearColor(0.2, 0.5, 0.5, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)  // depth buffer needed for DEPTH_TEST
 		program.Use()
 
-		gl.BindVertexArray(0)
+		cameraTransform := camera.GetTransform()
+		program.Uniform("camera", &cameraTransform[0])
+
+		aspect := float32(window.Width()) / float32(window.Height())
+		program.UniformProject(aspect)
+
+		vao.Bind()
+
+		for _, position := range cubePositions {
+			worldTransform := mgl32.Translate3D(position[0], position[1], position[2])
+
+			program.Uniform("world", &worldTransform[0])
+			gl.DrawArrays(gl.TRIANGLES, 0, 36)
+		}
+
+		vao.UnBind()
+
+		time.Sleep(1 * time.Millisecond)
 	}
 	return nil
 }

@@ -2,6 +2,13 @@ package gfx
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
+)
+
+const (
+	fovy = 60.0
+	near = 0.1
+	far = 100.0
 )
 
 type Program struct {
@@ -52,4 +59,29 @@ func (program *Program) Delete() {
 
 func (program *Program) Use() {
 	gl.UseProgram(program.glObject())
+}
+
+func (program *Program) GetUniformLocation(name string) int32 {
+	return gl.GetUniformLocation(program.glObject(), gl.Str(name + "\x00"))
+}
+
+// https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glUniform.xhtml
+func (program *Program) Uniform(name string, value *float32) {
+	gl.UniformMatrix4fv(
+		program.GetUniformLocation(name),
+		1,
+		false,
+		value,
+	)
+}
+
+func (program *Program) UniformProject(aspect float32) {
+	projectTransform := mgl32.Perspective(
+		mgl32.DegToRad(fovy),
+		aspect,
+		near,
+		far,
+	)
+
+	program.Uniform("project", &projectTransform[0])
 }

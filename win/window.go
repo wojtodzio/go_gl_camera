@@ -5,8 +5,12 @@ import (
 )
 
 type Window struct {
-	width int
+	width,
 	height int
+
+	deltaTime float32
+	previousFrameTime float64
+
 	glfwWindow *glfw.Window
 }
 
@@ -37,4 +41,25 @@ func (window *Window) StartFrame() {
 
 	// poll for UI window events
 	glfw.PollEvents()
+
+	currentFrameTime := glfw.GetTime()
+
+	if window.previousFrameTime == 0 {
+		window.deltaTime = 0
+	} else {
+		window.deltaTime = float32(currentFrameTime - window.previousFrameTime)
+	}
+	window.previousFrameTime = currentFrameTime
+}
+
+func (window *Window) SincePreviousFrame() float32 {
+	return window.deltaTime
+}
+
+func (window *Window) Width() int {
+	return window.width
+}
+
+func (window *Window) Height() int {
+	return window.height
 }
