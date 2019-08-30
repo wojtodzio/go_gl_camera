@@ -10,6 +10,7 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 
+	"time"
 )
 
 
@@ -24,24 +25,24 @@ func init() {
 
 func main() {
 	if err := initGlfw(); err != nil {
-		log.Fatalln("Failed to init glfw")
+		log.Println("Failed to init glfw")
 		panic(err)
 	}
 	defer glfw.Terminate()
 
 	window, err := win.NewWindow(width, height, "Virtual Camera")
 	if err != nil {
-		log.Fatalln("Failed to create a new window")
+		log.Println("Failed to create a new window")
 		panic(err)
 	}
 
 	if err := initOpenGL(); err != nil {
-		log.Fatalln("Failed to init OpenGL")
+		log.Println("Failed to init OpenGL")
 		panic(err)
 	}
 
 	if err := programLoop(window); err != nil {
-		log.Fatalln("Program crashed")
+		log.Println("Program crashed")
 		panic(err)
 	}
 }
@@ -67,6 +68,7 @@ func initOpenGL() error {
 
 	// Enable depth testing
 	// https://www.khronos.org/opengl/wiki/Depth_Test
+	// ensures that triangles that are "behind" others do not draw over top of them
 	gl.Enable(gl.DEPTH_TEST)
 
 	return nil
@@ -89,7 +91,19 @@ func programLoop(window *win.Window) error {
 
 	defer program.Delete()
 
+	log.Println("Entering program loop")
 	for !window.ShouldClose() {
+		window.StartFrame()
+
+		// Clear the colorbuffer
+		gl.ClearColor(0.2, 0.5, 0.5, 1.0)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)  // depth buffer needed for DEPTH_TEST
+		program.Use()
+
+		// TODO: Remove, it's a quick hack to not kill my machine's performance
+		time.Sleep(10 * time.Millisecond)
+
+		gl.BindVertexArray(0)
 	}
 	return nil
 }

@@ -9,6 +9,17 @@ type Program struct {
 	shaders []*Shader
 }
 
+func NewProgram(shaders ...*Shader) (*Program, error) {
+	program := &Program{glProgram: gl.CreateProgram()}
+	program.Attach(shaders...)
+
+	if err := program.Link(); err != nil {
+		return nil, err
+	}
+
+	return program, nil
+}
+
 func (program *Program) glObject() uint32 {
 	return program.glProgram
 }
@@ -39,13 +50,6 @@ func (program *Program) Delete() {
 	gl.DeleteProgram(program.glObject())
 }
 
-func NewProgram(shaders ...*Shader) (*Program, error) {
-	program := &Program{glProgram: gl.CreateProgram()}
-	program.Attach(shaders...)
-
-	if err := program.Link(); err != nil {
-		return nil, err
-	}
-
-	return program, nil
+func (program *Program) Use() {
+	gl.UseProgram(program.glObject())
 }

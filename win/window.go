@@ -27,6 +27,14 @@ func NewWindow(width, height int, title string) (*Window, error) {
 	}, nil
 }
 
-func (w *Window) ShouldClose() bool {
-	return w.glfwWindow.ShouldClose()
+func (window *Window) ShouldClose() bool {
+	return window.glfwWindow.ShouldClose()
+}
+
+func (window *Window) StartFrame() {
+	/// swap with the previous rendered buffer
+	window.glfwWindow.SwapBuffers()
+
+	// poll for UI window events
+	glfw.PollEvents()
 }
