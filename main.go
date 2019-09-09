@@ -9,7 +9,7 @@ import (
 	"github.com/wojtodzio/go_gl_camera/cam"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 
 	"time"
@@ -152,7 +152,7 @@ func programLoop(window *win.Window) error {
 
 	vao := gfx.CreateVAO(cubeVertices)
 
-	camera := cam.NewFPSCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 1, 0}, -90, 0)
+	camera := cam.NewFPSCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 1, 0}, -90, 0, window)
 
 	log.Println("Entering program loop")
 	for !window.ShouldClose() {

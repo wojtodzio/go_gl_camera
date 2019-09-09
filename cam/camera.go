@@ -3,6 +3,8 @@ package cam
 import (
 	"math"
 
+	"github.com/wojtodzio/go_gl_camera/win"
+
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -22,27 +24,59 @@ type FPSCamera struct {
 	up,
 	right,
 	worldUp mgl32.Vec3
+
+	inputManager *win.InputManager
 }
 
-func NewFPSCamera(position, worldUp mgl32.Vec3, yawDeg, pitchDeg float32) *FPSCamera {
+func NewFPSCamera(position, worldUp mgl32.Vec3, yawDeg, pitchDeg float32, window *win.Window) *FPSCamera {
 	return &FPSCamera{
 		pitchRad: mgl32.DegToRad(pitchDeg),
 		yawRad: mgl32.DegToRad(yawDeg),
 		position: position,
 		up: mgl32.Vec3{0, 1, 0},
 		worldUp: worldUp,
+		inputManager: window.InputManager(),
 	}
 }
 
 func (camera *FPSCamera) Update(deltaTime float32) {
 	camera.updatePosition(deltaTime)
+	camera.updateDirection()
 	camera.updateVectors()
 }
 
 func (camera *FPSCamera) updatePosition(deltaTime float32) {
 	distanceMoved := deltaTime * moveSpeed
 
-	camera.position = camera.position.Add(camera.front.Mul(distanceMoved))
+	if camera.inputManager.IsActive(win.FORWARD) {
+		camera.position = camera.position.Add(camera.front.Mul(distanceMoved))
+	}
+	if camera.inputManager.IsActive(win.BACKWARD) {
+		camera.position = camera.position.Sub(camera.front.Mul(distanceMoved))
+	}
+	if camera.inputManager.IsActive(win.LEFT) {
+		camera.position = camera.position.Sub(camera.front.Cross(camera.up).Normalize().Mul(distanceMoved))
+	}
+	if camera.inputManager.IsActive(win.RIGHT) {
+		camera.position = camera.position.Add(camera.front.Cross(camera.up).Normalize().Mul(distanceMoved))
+	}
+}
+
+func (camera *FPSCamera) updateDirection() {
+	deltaCursor := camera.inputManager.CursorChange()
+
+	deltaX := mgl32.DegToRad(-cursorSensitivity * deltaCursor[0])
+	deltaY := mgl32.DegToRad(cursorSensitivity * deltaCursor[1])
+
+	camera.pitchRad += deltaY
+	if camera.pitchRad > mgl32.DegToRad(89) {
+		camera.pitchRad = math.Pi / 2
+	} else if camera.pitchRad < -mgl32.DegToRad(89) {
+		camera.pitchRad = -math.Pi / 2
+	}
+
+	camera.yawRad = float32(math.Mod(float64(camera.yawRad + deltaX), 360))
+	camera.updateVectors()
 }
 
 func (camera *FPSCamera) updateVectors() {

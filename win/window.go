@@ -1,12 +1,14 @@
 package win
 
 import (
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
 type Window struct {
 	width,
 	height int
+
+	inputManager *InputManager
 
 	deltaTime float32
 	previousFrameTime float64
@@ -24,11 +26,21 @@ func NewWindow(width, height int, title string) (*Window, error) {
 	glfwWindow.MakeContextCurrent();
 	glfwWindow.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
+	inputManager := NewInputManager()
+
+	glfwWindow.SetKeyCallback(inputManager.keyCallback)
+	glfwWindow.SetCursorPosCallback(inputManager.mouseCallback)
+
 	return &Window{
 		width: width,
 		height: height,
 		glfwWindow: glfwWindow,
+		inputManager: inputManager,
 	}, nil
+}
+
+func (window *Window) InputManager() *InputManager {
+	return window.inputManager
 }
 
 func (window *Window) ShouldClose() bool {
@@ -42,6 +54,10 @@ func (window *Window) StartFrame() {
 	// poll for UI window events
 	glfw.PollEvents()
 
+	if window.inputManager.IsActive(QUIT) {
+		window.glfwWindow.SetShouldClose(true)
+	}
+
 	currentFrameTime := glfw.GetTime()
 
 	if window.previousFrameTime == 0 {
@@ -50,6 +66,8 @@ func (window *Window) StartFrame() {
 		window.deltaTime = float32(currentFrameTime - window.previousFrameTime)
 	}
 	window.previousFrameTime = currentFrameTime
+
+	window.inputManager.UpdateCursor()
 }
 
 func (window *Window) SincePreviousFrame() float32 {
